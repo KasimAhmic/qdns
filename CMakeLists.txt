@@ -13,10 +13,3 @@ target_link_libraries(qdns
   PRIVATE
   Boost::asio
   Boost::system)
-
-add_executable(nc src/client.cpp)
-
-target_link_libraries(nc
-        PRIVATE
-        Boost::asio
-        Boost::system)

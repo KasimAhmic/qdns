@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <chrono>
@@ -114,6 +113,7 @@ namespace logging {
             return oss.str();
         }
 
+        #ifdef TARGET_WIN32
         static std::string toString(const wchar_t *value) {
             if (!value) {
                 return "";
@@ -134,6 +134,7 @@ namespace logging {
         static std::string toString(WCHAR *value) {
             return toString(static_cast<const wchar_t *>(value));
         }
+        #endif
 
         static std::string colorize(const std::string &value, const LogMeta &meta) {
             return meta.color + value + SilentMeta.color;
@@ -144,8 +145,7 @@ namespace logging {
             const auto nowMs = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
             const auto epochSeconds = std::chrono::system_clock::to_time_t(now);
             const auto localTime = *std::localtime(&epochSeconds);
-            const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(nowMs.time_since_epoch()).count() %
-                            1000;
+            const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(nowMs.time_since_epoch()).count() % 1000;
 
             std::ostringstream oss;
 

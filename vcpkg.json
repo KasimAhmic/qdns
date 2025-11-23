@@ -1,6 +1,11 @@
 {
-  "dependencies" : [ "boost-asio", {
-    "name" : "boost-interprocess",
-    "version>=" : "1.89.0"
-  } ]
+  "name": "qdns",
+  "version": "1.0.0",
+  "dependencies": [
+    "boost-asio",
+    {
+      "name": "boost-interprocess",
+      "version>=": "1.89.0"
+    }
+  ]
 }

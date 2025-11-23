@@ -89,7 +89,7 @@ namespace dns {
         HESOID = 4,
     };
 
-    struct HeaderFlags {
+    struct header_flags {
         const bool qr;
         const uint8_t opcode;
         const bool aa;
@@ -99,7 +99,7 @@ namespace dns {
         const uint8_t z;
         const uint8_t rcode;
 
-        [[nodiscard]] static constexpr HeaderFlags from(const uint16_t flags) noexcept {
+        [[nodiscard]] static constexpr header_flags from(const uint16_t flags) noexcept {
             return {
                 static_cast<bool>(flags >> 15 & 0x1),
                 static_cast<uint8_t>(flags >> 11 & 0xF),
@@ -112,7 +112,7 @@ namespace dns {
             };
         }
 
-        [[nodiscard]] std::string ToString() const {
+        [[nodiscard]] std::string to_string() const {
             return std::format(
                 "[ QR: {} | OPCODE: {} | AA: {} | TC: {} | RD: {} | RA: {} | Z: {} | RCODE: {} ]",
                 this->qr,
@@ -148,18 +148,18 @@ namespace dns {
      * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
      * @endcode
      */
-    struct Header {
+    struct header {
         uint16_t id;
-        HeaderFlags flags;
+        header_flags flags;
         uint16_t qd_count;
         uint16_t an_count;
         uint16_t ns_count;
         uint16_t ar_count;
 
-        static Header From(const std::span<const std::byte> &data) {
+        static header from(const std::span<const std::byte> &data) {
             return {
                 dns::detail::read16(data, 0),
-                dns::HeaderFlags::from(dns::detail::read16(data, 2)),
+                dns::header_flags::from(dns::detail::read16(data, 2)),
                 dns::detail::read16(data, 4),
                 dns::detail::read16(data, 6),
                 dns::detail::read16(data, 8),
@@ -167,11 +167,11 @@ namespace dns {
             };
         }
 
-        [[nodiscard]] std::string ToString() const {
+        [[nodiscard]] std::string to_string() const {
             return std::format(
-                "ID: {} | Flags: {} | QD Count: {} | AN Count: {} | NS Count: {} | AR Count: {}",
+                "ID: {} | Flags: {} | QD: {} | AN: {} | NS: {} | AR: {}",
                 this->id,
-                this->flags.ToString(),
+                this->flags.to_string(),
                 this->qd_count,
                 this->an_count,
                 this->ns_count,
@@ -180,12 +180,12 @@ namespace dns {
         }
     };
 
-    struct Question {
+    struct question {
         std::string name;
         uint16_t type;
         uint16_t cls;
 
-        static Question From(const std::span<const std::byte> &data) {
+        static question from(const std::span<const std::byte> &data) {
             std::string name;
             uint8_t offset = 0;
 
@@ -234,32 +234,55 @@ namespace dns {
         }
     };
 
-    struct request {
-        dns::Header header;
-        dns::Question question;
-
-        static dns::request from(const std::array<std::byte, dns::REQUEST_SIZE> &data) {
-            return {
-                dns::Header::From(std::span(data.data(), dns::HEADER_SIZE)),
-                dns::Question::From(std::span(data.data() + dns::HEADER_SIZE, dns::REQUEST_SIZE - dns::HEADER_SIZE))
-            };
-        }
-
-        [[nodiscard]] std::string to_string() const {
-            return std::format(
-                "Header: [ {} ] | Question: [ {} ]",
-                this->header.ToString(),
-                this->question.to_string()
-            );
-        }
-    };
-
     struct answer {
+        dns::header header;
+        dns::question question;
         std::string name;
         uint16_t type;
         uint16_t cls;
         uint32_t ttl;
         uint16_t length;
         std::array<char, 128> data;
+
+        static dns::answer from(const dns::header &header, const dns::question &question) {
+            return answer{
+                header,
+                question
+            };
+        }
+
+        // TODO: Implement fully
+        [[nodiscard]] std::vector<std::byte> encode() const {
+            std::vector<std::byte> result;
+
+            result.push_back(static_cast<std::byte>(0b001));
+
+            return result;
+        }
+    };
+
+    struct request {
+        dns::header header{};
+        dns::question question{};
+        dns::answer answer{};
+
+        static dns::request from(const std::span<const std::byte> &data) {
+            const dns::header header = dns::header::from(std::span(data.data(), dns::HEADER_SIZE));
+            const dns::question question = dns::question::from(std::span(data.data() + dns::HEADER_SIZE, dns::REQUEST_SIZE - dns::HEADER_SIZE));
+
+            return {
+                header,
+                question,
+                dns::answer::from(header, question)
+            };
+        }
+
+        [[nodiscard]] std::string to_string() const {
+            return std::format(
+                "Header: [ {} ] | Question: [ {} ]",
+                this->header.to_string(),
+                this->question.to_string()
+            );
+        }
     };
 }

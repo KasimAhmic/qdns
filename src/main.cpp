@@ -5,11 +5,13 @@
 
 #include "dns.hpp"
 #include "logging.hpp"
+#include "store.hpp"
 
 constexpr uint8_t MAX_THREADS = 4;
 constexpr uint16_t PORT = 55555;
 
 static auto logger = std::make_unique<logging::Logger>("main", logging::LogLevel::Debug);
+static auto store = std::make_unique<dns::store>();
 
 // boost::asio::awaitable<void> echo(boost::asio::ip::tcp::socket socket) {
 //     try {
@@ -57,7 +59,7 @@ boost::asio::awaitable<void> resolve(boost::asio::ip::udp::socket socket) {
 
 boost::asio::awaitable<void> listener() {
     try {
-        auto ex = co_await boost::asio::this_coro::executor;
+        const auto ex = co_await boost::asio::this_coro::executor;
         boost::asio::ip::udp::socket socket(ex, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), PORT));
 
         std::array<std::byte, dns::REQUEST_SIZE> buffer{};
@@ -81,9 +83,20 @@ boost::asio::awaitable<void> listener() {
 
             logger->info(std::format("Received {} bytes from {}", bytes_received, sender.address().to_string()));
 
-            dns::request request = dns::request::from(buffer);
+            std::span<const std::byte> packet(buffer.data(), bytes_received);
+
+            dns::request request = dns::request::from(packet);
 
             logger->info(std::format("Request - {}", request.to_string()));
+
+            // TODO: This makes a copy, might want to optimize with pointers or something later
+            if (const std::optional<dns::entry> entry = store->find(request.question.name)) {
+                logger->info(std::format("\t> Answer - {}", entry->to_string()));
+            } else {
+                logger->warn(std::format("\t> No answer - {}", request.question.name));
+            }
+
+            socket.send_to(boost::asio::buffer(request.answer.encode()), sender);
         }
     } catch (const std::exception& e) {
         logger->error(std::format("listener Exception: %s\n", e.what()));
@@ -92,6 +105,10 @@ boost::asio::awaitable<void> listener() {
 
 int main() {
     logger->info("Starting qDNS...");
+
+    store->add({"dns.google.", 300, {"8.8.8.8", "8.8.4.4"}});
+    store->add({"google.com.", 300, {"192.178.50.78", "142.250.217.206"}});
+    store->add({"one.one.one.one.", 300, {"1.1.1.1", "1.0.0.1"}});
 
     try {
         boost::asio::io_context io(MAX_THREADS);
