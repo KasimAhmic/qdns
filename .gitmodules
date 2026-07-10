@@ -1,0 +1,6 @@
+[submodule "external/spdlog"]
+	path = external/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "external/boost"]
+	path = external/boost
+	url = https://github.com/boostorg/boost
