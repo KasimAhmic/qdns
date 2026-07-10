@@ -1,9 +1,9 @@
 #include <spdlog/spdlog.h>
 
 int main() {
-    spdlog::info("Starting qDNS...");
+  spdlog::info("Starting qDNS...");
 
-    spdlog::info("qDNS stopped");
+  spdlog::info("qDNS stopped");
 
-    return 0;
+  return 0;
 }

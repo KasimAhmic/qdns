@@ -1,0 +1,22 @@
+#BracketAlignmentStyle: Align
+IndentWidth: 4
+UseTab: Never
+TabWidth: 4
+ColumnLimit: 120
+PenaltyBreakBeforeFirstCallParameter: 1
+PenaltyBreakAssignment: 1000000
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: false
+NamespaceIndentation: All
+SortIncludes: true
+IncludeCategories:
+  # C++ Standard library includes
+  - Regex: "^<[a-z0-9_]+>$"
+    Priority: 1
+  # C Standard library includes
+  - Regex: "^<c[a-z0-9_]+>$"
+    Priority: 2
+  # Project includes
+  - Regex: ".*"
+    Priority: 100

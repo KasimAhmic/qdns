@@ -3,8 +3,8 @@
 #include <array>
 #include <bit>
 #include <iostream>
-#include <string>
 #include <span>
+#include <string>
 #include <vector>
 
 namespace dns {
@@ -31,7 +31,7 @@ namespace dns {
             std::memcpy(&result, data.data() + offset, sizeof(uint8_t));
             return result;
         }
-    }
+    } // namespace detail
 
     enum class record : uint16_t {
         A = 1,
@@ -115,17 +115,15 @@ namespace dns {
         }
 
         [[nodiscard]] std::string to_string() const {
-            return std::format(
-                "[ QR: {} | OPCODE: {} | AA: {} | TC: {} | RD: {} | RA: {} | Z: {} | RCODE: {} ]",
-                this->qr,
-                this->opcode,
-                this->aa,
-                this->tc,
-                this->rd,
-                this->ra,
-                this->z,
-                this->rcode
-            );
+            return std::format("[ QR: {} | OPCODE: {} | AA: {} | TC: {} | RD: {} | RA: {} | Z: {} | RCODE: {} ]",
+                               this->qr,
+                               this->opcode,
+                               this->aa,
+                               this->tc,
+                               this->rd,
+                               this->ra,
+                               this->z,
+                               this->rcode);
         }
     };
 
@@ -159,26 +157,22 @@ namespace dns {
         uint16_t ar_count;
 
         static header from(const std::span<const std::byte> &data) {
-            return {
-                dns::detail::read16(data, 0),
-                dns::header_flags::from(dns::detail::read16(data, 2)),
-                dns::detail::read16(data, 4),
-                dns::detail::read16(data, 6),
-                dns::detail::read16(data, 8),
-                dns::detail::read16(data, 10)
-            };
+            return {dns::detail::read16(data, 0),
+                    dns::header_flags::from(dns::detail::read16(data, 2)),
+                    dns::detail::read16(data, 4),
+                    dns::detail::read16(data, 6),
+                    dns::detail::read16(data, 8),
+                    dns::detail::read16(data, 10)};
         }
 
         [[nodiscard]] std::string to_string() const {
-            return std::format(
-                "ID: {} | Flags: {} | QD: {} | AN: {} | NS: {} | AR: {}",
-                this->id,
-                this->flags.to_string(),
-                this->qd_count,
-                this->an_count,
-                this->ns_count,
-                this->ar_count
-            );
+            return std::format("ID: {} | Flags: {} | QD: {} | AN: {} | NS: {} | AR: {}",
+                               this->id,
+                               this->flags.to_string(),
+                               this->qd_count,
+                               this->an_count,
+                               this->ns_count,
+                               this->ar_count);
         }
     };
 
@@ -207,14 +201,11 @@ namespace dns {
                 offset += len;
             }
 
-            return {
-                name,
-                dns::detail::read16(data, offset),
-                dns::detail::read16(data, offset + 2)
-            };
+            return {name, dns::detail::read16(data, offset), dns::detail::read16(data, offset + 2)};
         }
 
-        static std::string read_label(const std::span<const std::byte> &data, const uint8_t offset, const uint8_t length) {
+        static std::string
+        read_label(const std::span<const std::byte> &data, const uint8_t offset, const uint8_t length) {
             std::string label;
 
             for (uint8_t i = 0; i < length; i++) {
@@ -227,12 +218,7 @@ namespace dns {
         }
 
         [[nodiscard]] std::string to_string() const {
-            return std::format(
-                "Name: {} | Type: {} | Class: {}",
-                this->name,
-                this->type,
-                this->cls
-            );
+            return std::format("Name: {} | Type: {} | Class: {}", this->name, this->type, this->cls);
         }
     };
 
@@ -247,10 +233,7 @@ namespace dns {
         std::array<char, 128> data;
 
         static dns::answer from(const dns::header &header, const dns::question &question) {
-            return answer{
-                header,
-                question
-            };
+            return answer{header, question};
         }
 
         // TODO: Implement fully
@@ -270,21 +253,16 @@ namespace dns {
 
         static dns::request from(const std::span<const std::byte> &data) {
             const dns::header header = dns::header::from(std::span(data.data(), dns::HEADER_SIZE));
-            const dns::question question = dns::question::from(std::span(data.data() + dns::HEADER_SIZE, dns::REQUEST_SIZE - dns::HEADER_SIZE));
+            const dns::question question = dns::question::from(
+                std::span(data.data() + dns::HEADER_SIZE, dns::REQUEST_SIZE - dns::HEADER_SIZE));
 
-            return {
-                header,
-                question,
-                dns::answer::from(header, question)
-            };
+            return {header, question, dns::answer::from(header, question)};
         }
 
         [[nodiscard]] std::string to_string() const {
-            return std::format(
-                "Header: [ {} ] | Question: [ {} ]",
-                this->header.to_string(),
-                this->question.to_string()
-            );
+            return std::format("Header: [ {} ] | Question: [ {} ]",
+                               this->header.to_string(),
+                               this->question.to_string());
         }
     };
-}
+} // namespace dns
