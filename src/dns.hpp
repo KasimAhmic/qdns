@@ -4,6 +4,8 @@
 #include <bit>
 #include <iostream>
 #include <string>
+#include <span>
+#include <vector>
 
 namespace dns {
     constexpr uint16_t REQUEST_SIZE = 512;
