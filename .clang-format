@@ -14,9 +14,6 @@ IncludeCategories:
   # C++ Standard library includes
   - Regex: "^<[a-z0-9_]+>$"
     Priority: 1
-  # C Standard library includes
-  - Regex: "^<c[a-z0-9_]+>$"
-    Priority: 2
   # Project includes
   - Regex: ".*"
     Priority: 100
