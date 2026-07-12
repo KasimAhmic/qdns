@@ -18,8 +18,6 @@ int main(const int argc, char *argv[]) {
     options.add_options()("version,v", "Print version number");
     options.add_options()("config,c", po::value<std::string>(&configFile), "Configuration file");
 
-    AppConfig config{};
-
     try {
         po::variables_map variables;
         po::store(po::parse_command_line(argc, argv, options), variables);
@@ -40,12 +38,14 @@ int main(const int argc, char *argv[]) {
             return 1;
         }
 
-        config = AppConfig(configFile);
-
     } catch (const po::error &e) {
-        spdlog::error("Error parsing command line arguments: {}", e.what());
+        std::cout << "Error parsing command line arguments: " << e.what() << std::endl;
         return 1;
     }
+
+    const AppConfig config{configFile};
+
+    spdlog::set_level(config.getLogLevel());
 
     spdlog::info("Starting qDNS...");
 

@@ -1,19 +1,29 @@
-#BracketAlignmentStyle: Align
 IndentWidth: 4
 UseTab: Never
 TabWidth: 4
 ColumnLimit: 120
-PenaltyBreakBeforeFirstCallParameter: 1
-PenaltyBreakAssignment: 1000000
+
+BreakAfterReturnType: None
+
+AlignAfterOpenBracket: true
 BinPackArguments: false
 BinPackParameters: false
 AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+PenaltyBreakAssignment: 1000000
+PenaltyBreakBeforeFirstCallParameter: 1000000
+PenaltyBreakOpenParenthesis: 1000000
+PenaltyReturnTypeOnItsOwnLine: 1000000
+
 NamespaceIndentation: All
+
 SortIncludes: true
 IncludeCategories:
-  # C++ Standard library includes
+  # C++ standard library includes
   - Regex: "^<[a-z0-9_]+>$"
     Priority: 1
-  # Project includes
+
+  # Project and third-party includes
   - Regex: ".*"
     Priority: 100

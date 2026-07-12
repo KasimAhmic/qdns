@@ -4,8 +4,6 @@
 
 #include <boost/json/parse.hpp>
 
-AppConfig::AppConfig() = default;
-
 AppConfig::AppConfig(const std::filesystem::path &configFile) {
     std::ifstream stream{configFile};
 
@@ -19,8 +17,12 @@ AppConfig::AppConfig(const std::filesystem::path &configFile) {
     const boost::json::value document = boost::json::parse(buffer.str());
     const boost::json::object &root = document.as_object();
 
-    this->port = readProperty<uint16_t>(root, "port", 55555);
-    this->logLevel = readProperty<uint8_t>(root, "logLevel", 1);
+    this->port = static_cast<uint16_t>(readUInt(root, "port", DEFAULT_PORT, 1, 65535));
+    this->logLevel = static_cast<spdlog::level::level_enum>(readUInt(root,
+                                                                     "logLevel",
+                                                                     DEFAULT_LOG_LEVEL,
+                                                                     spdlog::level::trace,
+                                                                     spdlog::level::off));
 }
 
 AppConfig::~AppConfig() = default;

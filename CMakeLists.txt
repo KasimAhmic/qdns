@@ -21,7 +21,8 @@ add_subdirectory(external/boost EXCLUDE_FROM_ALL)
 
 add_executable(qdns src/main.cpp
         src/app_config.cpp
-        src/app_config.hpp)
+        src/app_config.hpp
+)
 
 target_link_libraries(qdns
         PRIVATE
