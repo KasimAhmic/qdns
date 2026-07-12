@@ -2,15 +2,50 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug qDNS",
+      "name": "Debug qDNS (Windows/MSVC)",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${command:cmake.launchTargetPath}",
-      "args": ["--config", "config.json"],
+      "program": "${command:cmake.getLaunchTargetPath}",
+      "args": ["--config", "${workspaceFolder}${/}config.json"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
-      "externalConsole": false
+      "externalConsole": false,
+      "preLaunchTask": "CMake: build qdns"
+    },
+    {
+      "name": "Debug qDNS (Linux/GDB)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${command:cmake.getLaunchTargetPath}",
+      "args": ["--config", "${workspaceFolder}/config.json"],
+      "stopAtEntry": true,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "setupCommands": [
+        {
+          "description": "Enable GDB pretty-printing",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "CMake: build qdns"
+    },
+    {
+      "name": "Debug qDNS (macOS/LLDB)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${command:cmake.getLaunchTargetPath}",
+      "args": ["--config", "${workspaceFolder}${/}config.json"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "CMake: build qdns"
     }
   ]
 }
