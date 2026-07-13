@@ -16,12 +16,21 @@ set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
 # Boost configuration
 set(BOOST_INCLUDE_LIBRARIES asio system interprocess program_options json test CACHE STRING "" FORCE)
 
+string(TIMESTAMP QDNS_BUILD_TIMESTAMP "%Y-%m-%d %H:%M:%S UTC" UTC)
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/build_info.hpp.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/build_info.hpp"
+    @ONLY
+)
+
 add_subdirectory(external/spdlog EXCLUDE_FROM_ALL)
 add_subdirectory(external/boost EXCLUDE_FROM_ALL)
 
 add_executable(qdns src/main.cpp
         src/app_config.cpp
         src/app_config.hpp
+        src/logging.cpp
+        src/logging.hpp
 )
 
 target_link_libraries(qdns
@@ -32,6 +41,16 @@ target_link_libraries(qdns
         Boost::program_options
         Boost::json
         spdlog::spdlog
+)
+
+target_include_directories(qdns
+        PRIVATE
+        "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
+
+target_compile_definitions(qdns
+        PRIVATE
+        QDNS_BUILD_TYPE="$<CONFIG>"
 )
 
 include(CTest)
