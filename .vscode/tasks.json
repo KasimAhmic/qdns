@@ -1,0 +1,48 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CMake: configure",
+      "type": "cmake",
+      "command": "configure",
+      "targets": ["all"],
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: build qdns",
+      "type": "cmake",
+      "command": "build",
+      "targets": ["qdns"],
+      "dependsOn": ["CMake: configure"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "qDNS: run",
+      "type": "process",
+      "command": "${command:cmake.getLaunchTargetPath}",
+      "args": ["--config", "${workspaceFolder}${/}config.json"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": ["CMake: build qdns"],
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: clean",
+      "type": "cmake",
+      "command": "clean",
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: clean rebuild",
+      "type": "cmake",
+      "command": "cleanRebuild",
+      "targets": ["qdns"],
+      "problemMatcher": []
+    }
+  ]
+}

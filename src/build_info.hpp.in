@@ -1,0 +1,23 @@
+#pragma once
+
+#ifndef QDNS_BUILD_TYPE
+#define QDNS_BUILD_TYPE "Unknown"
+#endif
+
+#include <string_view>
+
+namespace build_info {
+  inline constexpr std::string_view version = "1.0.0";
+
+  inline constexpr std::string_view compiler_id = "@CMAKE_CXX_COMPILER_ID@";
+  inline constexpr std::string_view compiler_version = "@CMAKE_CXX_COMPILER_VERSION@";
+
+  inline constexpr std::string_view target_system = "@CMAKE_SYSTEM_NAME@";
+  inline constexpr std::string_view target_architecture = "@CMAKE_SYSTEM_PROCESSOR@";
+
+  inline constexpr std::string_view host_system = "@CMAKE_HOST_SYSTEM_NAME@";
+  inline constexpr std::string_view host_architecture = "@CMAKE_HOST_SYSTEM_PROCESSOR@";
+
+  inline constexpr std::string_view build_type = QDNS_BUILD_TYPE;
+  inline constexpr std::string_view build_timestamp = "@QDNS_BUILD_TIMESTAMP@";
+} // namespace build_info
