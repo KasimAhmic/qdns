@@ -7,6 +7,11 @@
 
 namespace logging {
   void initialize() {
+    if (auto existing = spdlog::get("app")) {
+      spdlog::set_default_logger(existing);
+      return;
+    }
+
     auto logger = spdlog::stdout_color_mt("app");
 
     logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] "
@@ -16,7 +21,7 @@ namespace logging {
 
     logger->set_level(spdlog::level::info);
 
-    spdlog::set_default_logger(std::move(logger));
+    spdlog::set_default_logger(logger);
   }
 
   std::shared_ptr<spdlog::logger> getLogger(const std::string_view component) {

@@ -1,8 +1,11 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <iostream>
+#include <limits>
 #include <memory>
+#include <string>
 #include <string_view>
 
 #include <boost/json/value_to.hpp>

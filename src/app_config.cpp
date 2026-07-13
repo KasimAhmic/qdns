@@ -1,6 +1,8 @@
 #include "app_config.hpp"
 
 #include <fstream>
+#include <sstream>
+#include <stdexcept>
 
 #include <boost/json/parse.hpp>
 
