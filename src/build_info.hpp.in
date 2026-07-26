@@ -6,7 +6,7 @@
 
 #include <string_view>
 
-namespace build_info {
+namespace qdns::build_info {
   inline constexpr std::string_view version = "1.0.0";
 
   inline constexpr std::string_view compiler_id = "@CMAKE_CXX_COMPILER_ID@";
@@ -20,4 +20,4 @@ namespace build_info {
 
   inline constexpr std::string_view build_type = QDNS_BUILD_TYPE;
   inline constexpr std::string_view build_timestamp = "@QDNS_BUILD_TIMESTAMP@";
-} // namespace build_info
+} // namespace qdns::build_info

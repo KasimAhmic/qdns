@@ -31,6 +31,8 @@ add_executable(qdns src/main.cpp
         src/app_config.hpp
         src/logging.cpp
         src/logging.hpp
+        src/error.cpp
+        src/error.hpp
 )
 
 target_link_libraries(qdns
