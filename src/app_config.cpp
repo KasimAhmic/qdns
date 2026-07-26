@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <utility>
 
 #include <boost/json/parse.hpp>
 
@@ -11,7 +12,7 @@
 
 namespace qdns::config {
   AppConfig::AppConfig(const boost::json::object &config)
-      : logger(logging::getLogger(logging::Component::Config)),
+      : logger(qdns::logging::getLogger(logging::Component::Config)),
 
         version(this->readVersion(config, key::VERSION)),
         logLevel(this->readLogLevel(config, key::LOG_LEVEL, AppConfig::DEFAULT_LOG_LEVEL)),
@@ -121,21 +122,20 @@ namespace qdns::config {
 
   Version AppConfig::readVersion(const boost::json::object &root, const std::string_view &propertyName) const {
     if (const auto *version = root.if_contains(propertyName)) {
-      const std::string errorMessage = "Version must be an integer between " +
-                                       std::to_string(AS_UNDERLYING(Version::V1)) + " and " +
-                                       std::to_string(AS_UNDERLYING(Version::Count) - 1);
+      constexpr auto minVersion = std::to_underlying(Version::V1);
+      constexpr auto maxVersion = std::to_underlying(Version::Count) - 1;
 
       if (version->is_number() && !version->is_double()) {
         const auto result = boost::json::value_to<int64_t>(*version);
 
-        if (result >= AS_UNDERLYING(Version::V1) && result < AS_UNDERLYING(Version::Count)) {
+        if (result >= minVersion && result <= maxVersion) {
           return static_cast<Version>(result);
         }
-
-        throw qdns::error::ConfigError::invalidFileVersion(errorMessage);
       }
 
-      throw qdns::error::ConfigError::invalidFileVersion(errorMessage);
+      throw qdns::error::ConfigError::invalidFileVersion("Version must be an integer between " +
+                                                         std::to_string(minVersion) + " and " +
+                                                         std::to_string(maxVersion));
     }
 
     throw qdns::error::ConfigError::missingRequiredProperty(std::string(propertyName));

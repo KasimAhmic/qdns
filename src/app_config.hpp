@@ -7,15 +7,9 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <type_traits>
 
 #include <boost/json/value_to.hpp>
 #include <spdlog/spdlog.h>
-
-/**
- * @brief Utility macro to cast an enum class value to its underlying type.
- */
-#define AS_UNDERLYING(v) static_cast<std::underlying_type_t<decltype(v)>>(v)
 
 namespace qdns::config {
   namespace key {
