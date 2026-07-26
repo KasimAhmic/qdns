@@ -17,8 +17,12 @@ namespace qdns::logging {
       switch (component) {
       case Component::App:
         return "qdns";
+
       case Component::Config:
         return "config";
+
+      default:
+        return "unknown";
       }
     }
   } // namespace detail
