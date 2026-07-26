@@ -121,13 +121,14 @@ namespace qdns::config {
 
   Version AppConfig::readVersion(const boost::json::object &root, const std::string_view &propertyName) const {
     if (const auto *version = root.if_contains(propertyName)) {
-      const std::string errorMessage = "Version must be an integer between " + std::to_string(UT(Version::V1)) +
-                                       " and " + std::to_string(UT(Version::Count) - 1);
+      const std::string errorMessage = "Version must be an integer between " +
+                                       std::to_string(AS_UNDERLYING(Version::V1)) + " and " +
+                                       std::to_string(AS_UNDERLYING(Version::Count) - 1);
 
       if (version->is_number() && !version->is_double()) {
         const auto result = boost::json::value_to<int64_t>(*version);
 
-        if (result >= UT(Version::V1) && result < UT(Version::Count)) {
+        if (result >= AS_UNDERLYING(Version::V1) && result < AS_UNDERLYING(Version::Count)) {
           return static_cast<Version>(result);
         }
 
