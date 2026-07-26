@@ -11,71 +11,130 @@
 #include <boost/json/value_to.hpp>
 #include <spdlog/spdlog.h>
 
-class AppConfig {
-public:
-  explicit AppConfig(const std::filesystem::path &configFile, std::shared_ptr<spdlog::logger> logger);
-  ~AppConfig();
+/**
+ * @brief Utility macro to cast an enum class value to its underlying type.
+ */
+#define UT(v) static_cast<std::underlying_type_t<decltype(v)>>(v)
 
-  [[nodiscard]] uint16_t getPort() const { return this->port; }
-  [[nodiscard]] spdlog::level::level_enum getLogLevel() const { return this->logLevel; }
+namespace qdns::config {
+  namespace key {
+    constexpr std::string_view VERSION = "version";
+    constexpr std::string_view LOG_LEVEL = "logLevel";
+    constexpr std::string_view PORT = "port";
+  }; // namespace key
 
-private:
-  std::shared_ptr<spdlog::logger> logger;
+  namespace defaults {
+    constexpr std::string_view LOG_LEVEL = "info";
+    constexpr uint16_t PORT = 55555;
+  } // namespace defaults
 
-  uint16_t port;
-  spdlog::level::level_enum logLevel;
+  enum class Version : int64_t {
+    V1 = 1,
+    Count,
+  };
 
-  static constexpr uint16_t DEFAULT_PORT = 55555;
-  static constexpr spdlog::level::level_enum DEFAULT_LOG_LEVEL = spdlog::level::info;
-  static constexpr std::string_view DEFAULT_LOG_LEVEL_STR = "info";
+  class AppConfig {
+  public:
+    ~AppConfig();
 
-  // Helper functions to read configuration properties with default values and error handling
+    static AppConfig loadFromFile(const std::filesystem::path &configFile);
 
-  template <typename T>
-  [[nodiscard]] T defaultFromMissingProperty(const std::string_view &propertyName, const T defaultValue) const {
-    this->logger->warn("Property '{}' is missing, using default value", propertyName);
-    return defaultValue;
-  }
+    [[nodiscard]] qdns::config::Version getVersion() const { return this->version; }
+    [[nodiscard]] spdlog::level::level_enum getLogLevel() const { return this->logLevel; }
+    [[nodiscard]] uint16_t getPort() const { return this->port; }
 
-  template <typename T>
-  [[nodiscard]] T defaultFromTypeError(const std::string_view &propertyName,
-                                       const std::string_view &expectedType,
-                                       const T defaultValue) const {
-    this->logger->warn("Property '{}' is not of type '{}', using default value", propertyName, expectedType);
-    return defaultValue;
-  }
+  private:
+    std::shared_ptr<spdlog::logger> logger;
+    qdns::config::Version version;
+    spdlog::level::level_enum logLevel;
+    uint16_t port;
 
-  template <typename T>
-  [[nodiscard]] T defaultFromOutOfRangeError(const std::string_view &propertyName,
-                                             const std::string_view &expectedRange,
-                                             const T defaultValue) const {
-    this->logger->warn("Property '{}' is out of range '{}', using default value", propertyName, expectedRange);
-    return defaultValue;
-  }
+    explicit AppConfig(const boost::json::object &config);
 
-  [[nodiscard]] std::string readString(const boost::json::object &root,
-                                       const std::string_view &propertyName,
-                                       const std::string &defaultValue) const;
+    static constexpr spdlog::level::level_enum DEFAULT_LOG_LEVEL = spdlog::level::info;
+    static constexpr std::string_view DEFAULT_LOG_LEVEL_STR = "info";
+    static constexpr uint16_t DEFAULT_PORT = 55555;
 
-  [[nodiscard]] bool readBoolean(const boost::json::object &root,
-                                 const std::string_view &propertyName,
-                                 const bool defaultValue) const;
+    // Helper functions to read configuration properties with default values and error handling
 
-  [[nodiscard]] double readDouble(const boost::json::object &root,
-                                  const std::string_view &propertyName,
-                                  const double defaultValue,
-                                  const double minValue = std::numeric_limits<double>::lowest(),
-                                  const double maxValue = std::numeric_limits<double>::max()) const;
+    template <typename T>
+    [[nodiscard]] T defaultFromMissingProperty(const std::string_view &propertyName, const T defaultValue) const {
+      this->logger->warn("Property '{}' is missing, using default value: '{}'", propertyName, defaultValue);
+      return defaultValue;
+    }
 
-  [[nodiscard]] int64_t readInteger(const boost::json::object &root,
+    template <typename T>
+    [[nodiscard]] T defaultFromTypeError(const std::string_view &propertyName,
+                                         const std::string_view &expectedType,
+                                         const T defaultValue) const {
+      this->logger->warn("Property '{}' is not of type '{}', using default value: '{}'",
+                         propertyName,
+                         expectedType,
+                         defaultValue);
+      return defaultValue;
+    }
+
+    template <typename T>
+    [[nodiscard]] T defaultFromOutOfRangeError(const std::string_view &propertyName,
+                                               const std::string_view &expectedRange,
+                                               const T defaultValue) const {
+      this->logger->warn("Property '{}' is out of range '{}', using default value: '{}'",
+                         propertyName,
+                         expectedRange,
+                         defaultValue);
+      return defaultValue;
+    }
+
+    template <typename T>
+    [[nodiscard]] T defaultFromValueError(const std::string_view &propertyName,
+                                          const std::string_view &expectedValues,
+                                          const T defaultValue) const {
+      this->logger->warn("Property '{}' has an invalid value, expected one of '{}', using default value: '{}'",
+                         propertyName,
+                         expectedValues,
+                         defaultValue);
+      return defaultValue;
+    }
+
+    template <typename T>
+    [[nodiscard]] T defaultFromValueError(const std::string_view &propertyName,
+                                          const std::string_view &expectedValues,
+                                          const T defaultValue,
+                                          const std::string_view &defaultValueStr) const {
+      this->logger->warn("Property '{}' has an invalid value, expected one of '{}', using default value: '{}'",
+                         propertyName,
+                         expectedValues,
+                         defaultValueStr);
+      return defaultValue;
+    }
+
+    [[nodiscard]] std::string readString(const boost::json::object &root,
+                                         const std::string_view &propertyName,
+                                         const std::string &defaultValue) const;
+
+    [[nodiscard]] bool readBoolean(const boost::json::object &root,
+                                   const std::string_view &propertyName,
+                                   const bool defaultValue) const;
+
+    [[nodiscard]] double readDouble(const boost::json::object &root,
                                     const std::string_view &propertyName,
-                                    const int64_t defaultValue,
-                                    const int64_t minValue = std::numeric_limits<int64_t>::min(),
-                                    const int64_t maxValue = std::numeric_limits<int64_t>::max()) const;
+                                    const double defaultValue,
+                                    const double minValue = std::numeric_limits<double>::lowest(),
+                                    const double maxValue = std::numeric_limits<double>::max()) const;
 
-  // Config option specific read functions
+    [[nodiscard]] int64_t readInteger(const boost::json::object &root,
+                                      const std::string_view &propertyName,
+                                      const int64_t defaultValue,
+                                      const int64_t minValue = std::numeric_limits<int64_t>::min(),
+                                      const int64_t maxValue = std::numeric_limits<int64_t>::max()) const;
 
-  [[nodiscard]] spdlog::level::level_enum readLogLevel(const boost::json::object &root,
-                                                       const std::string_view &propertyName,
-                                                       const spdlog::level::level_enum defaultValue) const;
-};
+    // Config option specific read functions
+
+    [[nodiscard]] qdns::config::Version readVersion(const boost::json::object &root,
+                                                    const std::string_view &propertyName) const;
+
+    [[nodiscard]] spdlog::level::level_enum readLogLevel(const boost::json::object &root,
+                                                         const std::string_view &propertyName,
+                                                         const spdlog::level::level_enum defaultValue) const;
+  };
+} // namespace qdns::config
