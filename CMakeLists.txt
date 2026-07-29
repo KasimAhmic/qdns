@@ -81,6 +81,7 @@ if (BUILD_TESTING)
     add_executable(qdns_tests
         test/test_main.cpp
         test/test_app_config.cpp
+        test/test_logging.cpp
     )
 
     target_link_libraries(qdns_tests
