@@ -19,7 +19,8 @@ namespace qdns::config {
   }; // namespace key
 
   namespace defaults {
-    constexpr std::string_view LOG_LEVEL = "info";
+    constexpr spdlog::level::level_enum LOG_LEVEL = spdlog::level::info;
+    constexpr std::string_view LOG_LEVEL_STR = "info";
     constexpr uint16_t PORT = 55555;
   } // namespace defaults
 
@@ -45,10 +46,6 @@ namespace qdns::config {
     uint16_t port;
 
     explicit AppConfig(const boost::json::object &config);
-
-    static constexpr spdlog::level::level_enum DEFAULT_LOG_LEVEL = spdlog::level::info;
-    static constexpr std::string_view DEFAULT_LOG_LEVEL_STR = "info";
-    static constexpr uint16_t DEFAULT_PORT = 55555;
 
     // Helper functions to read configuration properties with default values and error handling
 
