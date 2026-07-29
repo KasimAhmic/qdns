@@ -26,23 +26,43 @@ configure_file(
 add_subdirectory(external/spdlog EXCLUDE_FROM_ALL)
 add_subdirectory(external/boost EXCLUDE_FROM_ALL)
 
-add_executable(qdns src/main.cpp
-        src/app_config.cpp
-        src/app_config.hpp
-        src/logging.cpp
-        src/logging.hpp
-        src/error.cpp
-        src/error.hpp
+add_library(libqdns
+    src/app_config.cpp
+    src/app_config.hpp
+    src/logging.cpp
+    src/logging.hpp
+    src/error.cpp
+    src/error.hpp
 )
+
+target_include_directories(libqdns
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    PRIVATE
+        "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
+
+target_link_libraries(libqdns
+    PUBLIC
+        Boost::json
+        spdlog::spdlog
+    PRIVATE
+        Boost::system
+)
+
+target_compile_definitions(libqdns
+    PRIVATE
+        QDNS_BUILD_TYPE="$<CONFIG>"
+)
+
+add_executable(qdns src/main.cpp)
 
 target_link_libraries(qdns
         PRIVATE
+        libqdns
         Boost::asio
-        Boost::system
         Boost::interprocess
         Boost::program_options
-        Boost::json
-        spdlog::spdlog
 )
 
 target_include_directories(qdns
@@ -58,10 +78,14 @@ target_compile_definitions(qdns
 include(CTest)
 
 if (BUILD_TESTING)
-    add_executable(qdns_tests test/test_main.cpp)
+    add_executable(qdns_tests
+        test/test_main.cpp
+        test/test_app_config.cpp
+    )
 
     target_link_libraries(qdns_tests
             PRIVATE
+            libqdns
             Boost::unit_test_framework
     )
 

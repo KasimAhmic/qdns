@@ -15,8 +15,8 @@ namespace qdns::config {
       : logger(qdns::logging::getLogger(logging::Component::Config)),
 
         version(this->readVersion(config, key::VERSION)),
-        logLevel(this->readLogLevel(config, key::LOG_LEVEL, AppConfig::DEFAULT_LOG_LEVEL)),
-        port(static_cast<uint16_t>(this->readInteger(config, key::PORT, AppConfig::DEFAULT_PORT, 1, 65535))) {}
+        logLevel(this->readLogLevel(config, key::LOG_LEVEL, defaults::LOG_LEVEL)),
+        port(static_cast<uint16_t>(this->readInteger(config, key::PORT, defaults::PORT, 1, 65535))) {}
 
   AppConfig::~AppConfig() = default;
 
@@ -144,7 +144,9 @@ namespace qdns::config {
   spdlog::level::level_enum AppConfig::readLogLevel(const boost::json::object &root,
                                                     const std::string_view &propertyName,
                                                     const spdlog::level::level_enum defaultValue) const {
-    const std::string logLevelStr = this->readString(root, propertyName, std::string(DEFAULT_LOG_LEVEL_STR));
+    const std::string defaultLogLevelStr = spdlog::level::to_string_view(defaultValue).data();
+
+    const std::string logLevelStr = this->readString(root, propertyName, std::string(defaultLogLevelStr));
 
     const spdlog::level::level_enum logLevel = spdlog::level::from_str(logLevelStr);
 
@@ -152,7 +154,7 @@ namespace qdns::config {
       this->logger->warn("Property '{}' has an invalid log level '{}', using default value '{}'",
                          propertyName,
                          logLevelStr,
-                         DEFAULT_LOG_LEVEL_STR);
+                         defaultLogLevelStr);
       return defaultValue;
     }
 
