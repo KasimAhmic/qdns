@@ -1,4 +1,5 @@
 #include <array>
+#include <functional>
 #include <ostream>
 #include <string_view>
 #include <utility>
