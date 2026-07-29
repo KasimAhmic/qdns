@@ -20,7 +20,6 @@ namespace qdns::config {
 
   namespace defaults {
     constexpr spdlog::level::level_enum LOG_LEVEL = spdlog::level::info;
-    constexpr std::string_view LOG_LEVEL_STR = "info";
     constexpr uint16_t PORT = 55555;
   } // namespace defaults
 

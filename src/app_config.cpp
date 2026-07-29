@@ -144,7 +144,9 @@ namespace qdns::config {
   spdlog::level::level_enum AppConfig::readLogLevel(const boost::json::object &root,
                                                     const std::string_view &propertyName,
                                                     const spdlog::level::level_enum defaultValue) const {
-    const std::string logLevelStr = this->readString(root, propertyName, std::string(defaults::LOG_LEVEL_STR));
+    const std::string defaultLogLevelStr = spdlog::level::to_string_view(defaultValue).data();
+
+    const std::string logLevelStr = this->readString(root, propertyName, std::string(defaultLogLevelStr));
 
     const spdlog::level::level_enum logLevel = spdlog::level::from_str(logLevelStr);
 
@@ -152,7 +154,7 @@ namespace qdns::config {
       this->logger->warn("Property '{}' has an invalid log level '{}', using default value '{}'",
                          propertyName,
                          logLevelStr,
-                         defaults::LOG_LEVEL_STR);
+                         defaultLogLevelStr);
       return defaultValue;
     }
 
