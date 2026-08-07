@@ -26,30 +26,34 @@ def git(*args: str, cwd: Path) -> str:
     )
 
 
+def print_row(*args: tuple[str, int]) -> None:
+    print(f"| {' | '.join(f'{arg[0]:<{arg[1]}}' for arg in args)} |")
+
+
 def main() -> None:
     root_dir = Path(__file__).parent.parent / "external"
 
-    deps: list[tuple[str, str, str]] = []
+    deps: list[tuple[str, str, str, str]] = []
 
     for dependency in listdir(root_dir):
         dependency_root = root_dir / dependency
 
-        tag = git("describe", "--tags", "--exact-match", cwd=dependency_root)
+        version = git("describe", "--tags", "--exact-match", cwd=dependency_root)
+        commit = git("rev-parse", "--short", "HEAD", cwd=dependency_root)
         remote = git("remote", "get-url", "origin", cwd=dependency_root)
 
-        deps.append((dependency, tag, remote))
+        deps.append((dependency, version, commit, remote))
 
-    dep_length = max(len(dep[0]) for dep in deps)
-    tag_length = max(len(dep[1]) for dep in deps)
-    rem_length = max(len(dep[2]) for dep in deps)
+    dl = max(len(dep[0]) for dep in deps)
+    vl = max(len(dep[1]) for dep in deps)
+    cl = max(len(dep[2]) for dep in deps)
+    rl = max(len(dep[3]) for dep in deps)
 
-    print(
-        f"| {'Dependency':<{dep_length}} | {'Tag':<{tag_length}} | {'Remote':<{rem_length}} |"
-    )
-    print(f"| {'-' * dep_length} | {'-' * tag_length} | {'-' * rem_length} |")
+    print_row(("Dependency", dl), ("Version", vl), ("Commit", cl), ("Remote", rl))
+    print_row(("-" * dl, dl), ("-" * vl, vl), ("-" * cl, cl), ("-" * rl, rl))
 
-    for dep, tag, remote in deps:
-        print(f"| {dep:<{dep_length}} | {tag:<{tag_length}} | {remote:<{rem_length}} |")
+    for dep, version, commit, remote in deps:
+        print_row((dep, dl), (version, vl), (commit, cl), (remote, rl))
 
 
 if __name__ == "__main__":
