@@ -27,12 +27,10 @@ add_subdirectory(external/spdlog EXCLUDE_FROM_ALL)
 add_subdirectory(external/boost EXCLUDE_FROM_ALL)
 
 add_library(libqdns
-    src/app_config.cpp
-    src/app_config.hpp
-    src/logging.cpp
-    src/logging.hpp
-    src/error.cpp
-    src/error.hpp
+    src/core/dns.hpp
+    src/core/header.hpp
+    src/core/header.cpp
+    src/core/error.hpp
 )
 
 target_include_directories(libqdns
@@ -42,56 +40,51 @@ target_include_directories(libqdns
         "${CMAKE_CURRENT_BINARY_DIR}/generated"
 )
 
-target_link_libraries(libqdns
+target_compile_definitions(libqdns PRIVATE QDNS_BUILD_TYPE="$<CONFIG>")
+
+add_library(qdns_sources 
+    src/app_config.cpp
+    src/app_config.hpp
+    src/logging.cpp
+    src/logging.hpp
+    src/number_util.hpp
+)
+
+target_link_libraries(qdns_sources
     PUBLIC
         Boost::json
         spdlog::spdlog
-    PRIVATE
-        Boost::system
-)
-
-target_compile_definitions(libqdns
-    PRIVATE
-        QDNS_BUILD_TYPE="$<CONFIG>"
-)
-
-add_executable(qdns src/main.cpp)
-
-target_link_libraries(qdns
-        PRIVATE
-        libqdns
         Boost::asio
+        Boost::system
         Boost::interprocess
         Boost::program_options
 )
 
-target_include_directories(qdns
-        PRIVATE
-        "${CMAKE_CURRENT_BINARY_DIR}/generated"
-)
+add_executable(qdns src/main.cpp)
 
-target_compile_definitions(qdns
-        PRIVATE
-        QDNS_BUILD_TYPE="$<CONFIG>"
-)
+target_link_libraries(qdns PRIVATE libqdns qdns_sources)
+target_include_directories(qdns PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+target_compile_definitions(qdns PRIVATE QDNS_BUILD_TYPE="$<CONFIG>")
 
 include(CTest)
 
 if (BUILD_TESTING)
+    add_subdirectory(external/googletest ${CMAKE_CURRENT_BINARY_DIR}/googletest EXCLUDE_FROM_ALL)
+
     add_executable(qdns_tests
         test/test_main.cpp
         test/test_app_config.cpp
         test/test_logging.cpp
+        test/core/test_header.cpp
     )
 
     target_link_libraries(qdns_tests
-            PRIVATE
+        PRIVATE
             libqdns
-            Boost::unit_test_framework
+            qdns_sources
+            GTest::gtest
     )
 
-    add_test(
-            NAME qdns.unit
-            COMMAND qdns_tests
-    )
+    include(GoogleTest)
+    gtest_discover_tests(qdns_tests)
 endif ()

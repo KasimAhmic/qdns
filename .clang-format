@@ -6,6 +6,12 @@ ColumnLimit: 120
 BreakAfterReturnType: None
 
 AlignAfterOpenBracket: true
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: true
+  AlignCompound: false
+  PadOperators: true
 BinPackArguments: false
 BinPackParameters: false
 AllowAllArgumentsOnNextLine: false

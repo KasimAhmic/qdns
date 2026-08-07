@@ -1,22 +1,14 @@
-#define BOOST_TEST_MODULE qdns_tests
+#include <memory>
 
-#include <boost/mpl/list.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gtest/gtest.h>
+#include <spdlog/sinks/null_sink.h>
+#include <spdlog/spdlog.h>
 
-BOOST_AUTO_TEST_SUITE(dns_message_tests)
+int main(int argc, char **argv) {
+  const auto logger = std::make_shared<spdlog::logger>("test", std::make_shared<spdlog::sinks::null_sink_mt>());
 
-BOOST_AUTO_TEST_CASE(basic_test) { BOOST_TEST(true); }
+  spdlog::set_default_logger(logger);
 
-BOOST_DATA_TEST_CASE(parameterized_test, boost::unit_test::data::make({0, 1, 2, 3, 4}), value) {
-  BOOST_TEST(value < 5);
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
-
-using test_types = boost::mpl::list<int, float, double>;
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(type_parameterized_test, T, test_types) {
-  T value{};
-  BOOST_TEST(value == T{});
-}
-
-BOOST_AUTO_TEST_SUITE_END()
