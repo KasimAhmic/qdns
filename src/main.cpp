@@ -25,7 +25,7 @@ int main(const int argc, char *argv[]) {
   options.add_options()("about,a", "Print information about the executable");
   options.add_options()("config,c", po::value<std::string>(&configFile), "Configuration file");
 
-    try {
+  try {
     po::variables_map variables;
     po::store(po::parse_command_line(argc, argv, options), variables);
     po::notify(variables);

@@ -1,3 +1,5 @@
+#include <array>
+
 #include "../testing.hpp"
 #include "core/header.hpp"
 
