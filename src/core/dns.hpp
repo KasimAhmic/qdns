@@ -55,7 +55,7 @@ namespace q::dns {
     DLV        = 32769,
   };
 
-  enum class Class : uint8_t {
+  enum class Class : uint16_t {
     INTERNET = 1,
     CSNET    = 2,
     CHAOS    = 3,
