@@ -27,6 +27,7 @@ add_subdirectory(external/spdlog EXCLUDE_FROM_ALL)
 add_subdirectory(external/boost EXCLUDE_FROM_ALL)
 
 add_library(libqdns
+    src/core/byte_util.hpp
     src/core/dns.hpp
     src/core/header.hpp
     src/core/header.cpp
@@ -76,6 +77,7 @@ if (BUILD_TESTING)
         test/test_app_config.cpp
         test/test_logging.cpp
         test/core/test_header.cpp
+        test/core/test_byte_util.cpp
     )
 
     target_link_libraries(qdns_tests

@@ -84,8 +84,8 @@ int main(const int argc, char *argv[]) {
                                                          12})
                   .value();
 
-    logger->info(req.toString());
-    logger->info(res.toString());
+    logger->info(req.to_string());
+    logger->info(res.to_string());
 
     logger->info("qDNS stopped");
 
