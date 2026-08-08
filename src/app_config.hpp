@@ -1,26 +1,31 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <iostream>
-#include <limits>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 #include <boost/json/value_to.hpp>
 #include <spdlog/spdlog.h>
 
-namespace qdns::config {
+#include "number_util.hpp"
+
+namespace q::config {
+
   namespace key {
-    constexpr std::string_view VERSION = "version";
+    constexpr std::string_view VERSION   = "version";
     constexpr std::string_view LOG_LEVEL = "logLevel";
-    constexpr std::string_view PORT = "port";
+    constexpr std::string_view PORT      = "port";
   }; // namespace key
 
   namespace defaults {
     constexpr spdlog::level::level_enum LOG_LEVEL = spdlog::level::info;
-    constexpr uint16_t PORT = 55555;
+    constexpr uint16_t PORT                       = 55555;
   } // namespace defaults
 
   enum class Version : int64_t {
@@ -34,19 +39,17 @@ namespace qdns::config {
 
     static AppConfig loadFromFile(const std::filesystem::path &configFile);
 
-    [[nodiscard]] qdns::config::Version getVersion() const { return this->version; }
+    [[nodiscard]] q::config::Version getVersion() const { return this->version; }
     [[nodiscard]] spdlog::level::level_enum getLogLevel() const { return this->logLevel; }
     [[nodiscard]] uint16_t getPort() const { return this->port; }
 
   private:
     std::shared_ptr<spdlog::logger> logger;
-    qdns::config::Version version;
+    q::config::Version version;
     spdlog::level::level_enum logLevel;
     uint16_t port;
 
     explicit AppConfig(const boost::json::object &config);
-
-    // Helper functions to read configuration properties with default values and error handling
 
     template <typename T>
     [[nodiscard]] T defaultFromMissingProperty(const std::string_view &propertyName, const T defaultValue) const {
@@ -99,33 +102,87 @@ namespace qdns::config {
       return defaultValue;
     }
 
-    [[nodiscard]] std::string readString(const boost::json::object &root,
-                                         const std::string_view &propertyName,
-                                         const std::string &defaultValue) const;
+    template <typename T>
+      requires util::JsonType<T>
+    [[nodiscard]] T readValue(const boost::json::object &root,
+                              const std::string_view &propertyName,
+                              const T defaultValue) const {
 
-    [[nodiscard]] bool readBoolean(const boost::json::object &root,
-                                   const std::string_view &propertyName,
-                                   const bool defaultValue) const;
+      const auto *value = root.if_contains(propertyName);
 
-    [[nodiscard]] double readDouble(const boost::json::object &root,
-                                    const std::string_view &propertyName,
-                                    const double defaultValue,
-                                    const double minValue = std::numeric_limits<double>::lowest(),
-                                    const double maxValue = std::numeric_limits<double>::max()) const;
+      if (!value) {
+        return this->defaultFromMissingProperty(propertyName, defaultValue);
+      }
 
-    [[nodiscard]] int64_t readInteger(const boost::json::object &root,
-                                      const std::string_view &propertyName,
-                                      const int64_t defaultValue,
-                                      const int64_t minValue = std::numeric_limits<int64_t>::min(),
-                                      const int64_t maxValue = std::numeric_limits<int64_t>::max()) const;
+      if constexpr (std::same_as<std::remove_cvref_t<T>, std::string>) {
+        if (!value->is_string()) {
+          return this->defaultFromTypeError(propertyName, "string", defaultValue);
+        }
+      } else if constexpr (std::same_as<std::remove_cvref_t<T>, bool>) {
+        if (!value->is_bool()) {
+          return this->defaultFromTypeError(propertyName, "bool", defaultValue);
+        }
+      } else if constexpr (std::same_as<std::remove_cvref_t<T>, double>) {
+        if (!value->is_double()) {
+          return this->defaultFromTypeError(propertyName, "double", defaultValue);
+        }
+      } else if constexpr (std::same_as<std::remove_cvref_t<T>, int64_t>) {
+        if (!value->is_int64()) {
+          return this->defaultFromTypeError(propertyName, "int64", defaultValue);
+        }
+      } else {
+        static_assert(std::is_same_v<T, void>, "Unsupported type for readValue");
+      }
 
-    // Config option specific read functions
+      return boost::json::value_to<T>(*value);
+    }
 
-    [[nodiscard]] qdns::config::Version readVersion(const boost::json::object &root,
-                                                    const std::string_view &propertyName) const;
+    template <typename T>
+      requires util::JsonNumber<T>
+    [[nodiscard]] T readValueBetween(const boost::json::object &root,
+                                     const std::string_view &propertyName,
+                                     const T defaultValue,
+                                     const T min = util::JsonNumberLimits<T>::min(),
+                                     const T max = util::JsonNumberLimits<T>::max()) {
+      const T value = this->readValue<T>(root, propertyName, defaultValue);
+
+      if (value < min || value > max) {
+        return this->defaultFromOutOfRangeError(propertyName,
+                                                std::to_string(min) + " to " + std::to_string(max),
+                                                defaultValue);
+      }
+
+      return value;
+    };
+
+    [[nodiscard]] q::config::Version readVersion(const boost::json::object &root,
+                                                 const std::string_view &propertyName) const;
 
     [[nodiscard]] spdlog::level::level_enum readLogLevel(const boost::json::object &root,
                                                          const std::string_view &propertyName,
                                                          const spdlog::level::level_enum defaultValue) const;
   };
-} // namespace qdns::config
+
+  enum class ErrorCode : size_t {
+    UnableToOpenConfigFile        = 0,
+    InvalidConfigFileFormat       = 1,
+    InvalidConfigFileVersion      = 2,
+    MissingRequiredConfigProperty = 3,
+  };
+
+  class ConfigException : public std::runtime_error {
+  public:
+    explicit ConfigException(ErrorCode errorCode, const std::string &message);
+    ~ConfigException();
+
+    static ConfigException unableToOpenFile(const std::string &filePath);
+    static ConfigException invalidFileFormat(const std::string &details);
+    static ConfigException invalidFileVersion(const std::string &details);
+    static ConfigException missingRequiredProperty(const std::string &propertyName);
+
+    [[nodiscard]] ErrorCode getErrorCode() const { return this->errorCode; }
+
+  private:
+    ErrorCode errorCode;
+  };
+} // namespace q::config

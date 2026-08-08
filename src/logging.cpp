@@ -5,7 +5,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-namespace qdns::logging {
+namespace q::logging {
   void initialize() {
     if (auto existing = spdlog::get(std::string(detail::getLoggerName(Component::App)))) {
       spdlog::set_default_logger(existing);
@@ -36,4 +36,4 @@ namespace qdns::logging {
 
     return logger;
   }
-} // namespace qdns::logging
+} // namespace q::logging

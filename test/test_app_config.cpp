@@ -1,116 +1,126 @@
 #include <array>
+#include <filesystem>
 #include <functional>
+#include <memory>
 #include <ostream>
 #include <string_view>
 #include <utility>
 
 #include "app_config.hpp"
-#include "error.hpp"
 #include "testing.hpp"
 
-namespace qdns::config {
-  std::ostream &operator<<(std::ostream &stream, const Version version) {
-    return stream << std::to_underlying(version);
+class AppConfigTest : public FileTest {
+protected:
+  static void expectError(const std::filesystem::path &path, const q::config::ErrorCode expectedError) {
+
+    try {
+      q::config::AppConfig::loadFromFile(path);
+      FAIL() << "Expected ConfigException";
+    } catch (const q::config::ConfigException &exception) {
+      EXPECT_EQ(exception.getErrorCode(), expectedError);
+    } catch (...) {
+      FAIL() << "Expected ConfigException";
+    }
   }
-} // namespace qdns::config
+};
 
-BOOST_AUTO_TEST_SUITE(app_config_tests)
-
-BOOST_FIXTURE_TEST_CASE(loads_valid_config, FileFixture) {
+TEST_F(AppConfigTest, LoadsValidConfig) {
   const auto path = writeFile("config.json", R"({
-    "version": 1,
-    "logLevel": "debug",
-    "port": 12345
-  })");
+        "version": 1,
+        "logLevel": "debug",
+        "port": 12345
+    })");
 
-  const auto config = qdns::config::AppConfig::loadFromFile(path);
+  const auto config = q::config::AppConfig::loadFromFile(path);
 
-  BOOST_TEST(config.getVersion() == qdns::config::Version::V1);
-  BOOST_TEST(config.getLogLevel() == spdlog::level::level_enum::debug);
-  BOOST_TEST(config.getPort() == 12345);
+  EXPECT_EQ(config.getVersion(), q::config::Version::V1);
+  EXPECT_EQ(config.getLogLevel(), spdlog::level::debug);
+  EXPECT_EQ(config.getPort(), 12345);
 }
 
-std::function<bool(const qdns::error::ConfigError &)> isErrorCode(const qdns::error::ErrorCode expected) {
-  return [expected](const qdns::error::ConfigError &e) { return e.getErrorCode() == expected; };
+TEST_F(AppConfigTest, ThrowsOnMissingConfigFile) {
+  const auto path = temporaryDirectory.getPath() / "nonexistent_config.json";
+
+  expectError(path, q::config::ErrorCode::UnableToOpenConfigFile);
 }
 
-BOOST_FIXTURE_TEST_CASE(throws_on_missing_config_file, FileFixture) {
-  const auto path = this->temporaryDirectory.getPath() / "nonexistent_config.json";
-
-  BOOST_CHECK_EXCEPTION(qdns::config::AppConfig::loadFromFile(path),
-                        qdns::error::ConfigError,
-                        isErrorCode(qdns::error::ErrorCode::UnableToOpenConfigFile));
-}
-
-BOOST_DATA_TEST_CASE_F(FileFixture,
-                       throws_on_malformed_json,
-                       boost::unit_test::data::make({
-                           R"()",   // Empty file
-                           R"({)",  // Missing closing brace
-                           R"([])", // Invalid JSON type (array instead of object)
-                           R"({version: 1, logLevel: "debug", port: 12345})",        // Missing quotes around keys
-                           R"({"version: 1, "logLevel": "debug", "port": 12345})",   // Missing closing quote
-                           R"({"version": 1L, "logLevel": "debug", "port": 12345})", // Invalid number format
-                           R"({"version": 1, "logLevel": "debug", "port": 12345)",   // Missing closing brace
-                           R"({"version": 1, "logLevel": "debug", "port": 12345,})", // Trailing comma
-                           R"({"version": 1, "logLevel": "debug", "port": 12345,)",  // Missing closing brace and
-                                                                                     // trailing comma
-                       }),
-                       contents) {
-  const auto path = writeFile("config.json", contents);
-
-  BOOST_CHECK_EXCEPTION(qdns::config::AppConfig::loadFromFile(path),
-                        qdns::error::ConfigError,
-                        isErrorCode(qdns::error::ErrorCode::InvalidConfigFileFormat));
-}
-
-BOOST_DATA_TEST_CASE_F(FileFixture,
-                       throws_on_invalid_version,
-                       boost::unit_test::data::make({
-                           // Unsupported version
-                           R"({"version": 2, "logLevel": "debug", "port": 12345})",
-                           // Version as string instead of integer
-                           R"({"version": "1", "logLevel": "debug", "port": 12345})",
-                           // Version as float instead of integer
-                           R"({"version": 1.5, "logLevel": "debug", "port": 12345})",
-                           // Version as null instead of integer
-                           R"({"version": null, "logLevel": "debug", "port": 12345})",
-                           // Version as boolean instead of integer
-                           R"({"version": true, "logLevel": "debug", "port": 12345})",
-                       }),
-                       contents) {
-  const auto path = writeFile("config.json", contents);
-
-  BOOST_CHECK_EXCEPTION(qdns::config::AppConfig::loadFromFile(path),
-                        qdns::error::ConfigError,
-                        isErrorCode(qdns::error::ErrorCode::InvalidConfigFileVersion));
-}
-
-BOOST_FIXTURE_TEST_CASE(throws_on_missing_version, FileFixture) {
+TEST_F(AppConfigTest, ThrowsOnMissingVersion) {
   const auto path = writeFile("config.json", R"({
-    "logLevel": "debug",
-    "port": 12345
-  })");
+        "logLevel": "debug",
+        "port": 12345
+    })");
 
-  BOOST_CHECK_EXCEPTION(qdns::config::AppConfig::loadFromFile(path),
-                        qdns::error::ConfigError,
-                        isErrorCode(qdns::error::ErrorCode::MissingRequiredConfigProperty));
+  expectError(path, q::config::ErrorCode::MissingRequiredConfigProperty);
 }
 
-BOOST_DATA_TEST_CASE_F(FileFixture,
-                       loads_default_values_for_missing_properties,
-                       boost::unit_test::data::make({
-                           R"({"version": 1})",
-                           R"({"version": 1, "logLevel": 1})",
-                           R"({"version": 1, "port": "12345"})",
-                       }),
-                       contents) {
-  const auto path = writeFile("config.json", contents);
+struct ConfigCase {
+  std::string_view name;
+  std::string_view contents;
+};
 
-  const auto config = qdns::config::AppConfig::loadFromFile(path);
+class AppConfigMalformedJsonTest : public AppConfigTest, public testing::WithParamInterface<ConfigCase> {};
 
-  BOOST_TEST(config.getLogLevel() == qdns::config::defaults::LOG_LEVEL);
-  BOOST_TEST(config.getPort() == qdns::config::defaults::PORT);
+TEST_P(AppConfigMalformedJsonTest, ThrowsOnMalformedJson) {
+  const auto &testCase = GetParam();
+  const auto path      = writeFile("config.json", testCase.contents);
+
+  expectError(path, q::config::ErrorCode::InvalidConfigFileFormat);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+INSTANTIATE_TEST_SUITE_P(MalformedJson,
+                         AppConfigMalformedJsonTest,
+                         testing::Values(ConfigCase{"EmptyFile", R"()"},
+                                         ConfigCase{"InvalidJson", R"({)"},
+                                         ConfigCase{"ArrayInsteadOfObject", R"([])"},
+                                         ConfigCase{"UnquotedKeys", R"({version: 1, logLevel: "debug", port: 12345})"},
+                                         ConfigCase{"MissingQuote",
+                                                    R"({"version: 1, "logLevel": "debug", "port": 12345})"},
+                                         ConfigCase{"InvalidNumberFormat",
+                                                    R"({"version": 1L, "logLevel": "debug", "port": 12345})"},
+                                         ConfigCase{"MissingClosingBrace",
+                                                    R"({"version": 1, "logLevel": "debug", "port": 12345)"},
+                                         ConfigCase{"TrailingComma",
+                                                    R"({"version": 1, "logLevel": "debug", "port": 12345,})"}),
+                         [](const testing::TestParamInfo<ConfigCase> &info) { return std::string{info.param.name}; });
+
+class AppConfigInvalidVersionTest : public AppConfigTest, public testing::WithParamInterface<ConfigCase> {};
+
+TEST_P(AppConfigInvalidVersionTest, ThrowsOnInvalidVersion) {
+  const auto &testCase = GetParam();
+  const auto path      = writeFile("config.json", testCase.contents);
+
+  expectError(path, q::config::ErrorCode::InvalidConfigFileVersion);
+}
+
+INSTANTIATE_TEST_SUITE_P(InvalidVersion,
+                         AppConfigInvalidVersionTest,
+                         testing::Values(ConfigCase{"UnsupportedVersion",
+                                                    R"({"version": 9999999, "logLevel": "debug", "port": 12345})"},
+                                         ConfigCase{"VersionAsString",
+                                                    R"({"version": "1", "logLevel": "debug", "port": 12345})"},
+                                         ConfigCase{"VersionAsFloat",
+                                                    R"({"version": 1.5, "logLevel": "debug", "port": 12345})"},
+                                         ConfigCase{"VersionAsNull",
+                                                    R"({"version": null, "logLevel": "debug", "port": 12345})"},
+                                         ConfigCase{"VersionAsBoolean",
+                                                    R"({"version": true, "logLevel": "debug", "port": 12345})"}),
+                         [](const testing::TestParamInfo<ConfigCase> &info) { return std::string{info.param.name}; });
+
+class AppConfigDefaultPropertiesTest : public FileTest, public testing::WithParamInterface<ConfigCase> {};
+
+TEST_P(AppConfigDefaultPropertiesTest, UsesDefaultProperties) {
+  const auto &testCase = GetParam();
+  const auto path      = writeFile("config.json", testCase.contents);
+
+  const auto config = q::config::AppConfig::loadFromFile(path);
+
+  EXPECT_EQ(config.getLogLevel(), q::config::defaults::LOG_LEVEL);
+  EXPECT_EQ(config.getPort(), q::config::defaults::PORT);
+}
+
+INSTANTIATE_TEST_SUITE_P(DefaultProperties,
+                         AppConfigDefaultPropertiesTest,
+                         testing::Values(ConfigCase{"MissingLogLevelAndPort", R"({"version": 1})"},
+                                         ConfigCase{"LogLevelAsNumber", R"({"version": 1, "logLevel": 1})"},
+                                         ConfigCase{"PortAsString", R"({"version": 1, "port": "12345"})"}),
+                         [](const testing::TestParamInfo<ConfigCase> &info) { return std::string{info.param.name}; });

@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <memory>
 #include <random>
 #include <sstream>
 #include <stdexcept>
@@ -11,15 +12,13 @@
 #include <string_view>
 #include <system_error>
 
-#include <boost/mpl/list.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gtest/gtest.h>
 
 class TempDir {
 public:
   TempDir() : path{createUniqueDirectory()} {}
 
-  TempDir(const TempDir &) = delete;
+  TempDir(const TempDir &)            = delete;
   TempDir &operator=(const TempDir &) = delete;
 
   ~TempDir() noexcept {
@@ -111,9 +110,11 @@ private:
   const std::filesystem::path path;
 };
 
-struct FileFixture {
+class FileTest : public testing::Test {
+public:
   TempDir temporaryDirectory;
 
+protected:
   /**
    * @brief Writes a file with the given contents to the system's temp directory.
    *
@@ -123,6 +124,6 @@ struct FileFixture {
    */
   [[nodiscard]] std::filesystem::path writeFile(const std::filesystem::path &name,
                                                 const std::string_view contents) const {
-    return temporaryDirectory.writeFile(name, contents);
+    return this->temporaryDirectory.writeFile(name, contents);
   }
 };

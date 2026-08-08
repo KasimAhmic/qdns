@@ -6,9 +6,9 @@
 
 #include <spdlog/logger.h>
 
-namespace qdns::logging {
+namespace q::logging {
   enum class Component : uint8_t {
-    App = 0,
+    App    = 0,
     Config = 1,
   };
 
@@ -30,4 +30,4 @@ namespace qdns::logging {
   void initialize();
 
   [[nodiscard]] std::shared_ptr<spdlog::logger> getLogger(const Component component);
-} // namespace qdns::logging
+} // namespace q::logging

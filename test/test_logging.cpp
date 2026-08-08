@@ -1,15 +1,20 @@
 #include "logging.hpp"
 #include "testing.hpp"
 
-BOOST_AUTO_TEST_SUITE(logging_tests)
+TEST(LoggingTest, InitializesLoggerOnce) {
+  q::logging::initialize();
 
-BOOST_AUTO_TEST_CASE(initializes_logger_once) {
-  qdns::logging::initialize();
+  const auto logger1 = q::logging::getLogger(q::logging::Component::App);
+  const auto logger2 = q::logging::getLogger(q::logging::Component::App);
 
-  const auto logger1 = qdns::logging::getLogger(qdns::logging::Component::App);
-  const auto logger2 = qdns::logging::getLogger(qdns::logging::Component::App);
-
-  BOOST_TEST(logger1 == logger2);
+  EXPECT_EQ(logger1, logger2);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+TEST(LoggingTest, InitializesNewLoggerForDifferentComponent) {
+  q::logging::initialize();
+
+  const auto logger1 = q::logging::getLogger(q::logging::Component::App);
+  const auto logger2 = q::logging::getLogger(q::logging::Component::Config);
+
+  EXPECT_NE(logger1, logger2);
+}
