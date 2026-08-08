@@ -27,6 +27,7 @@ add_subdirectory(external/spdlog EXCLUDE_FROM_ALL)
 add_subdirectory(external/boost EXCLUDE_FROM_ALL)
 
 add_library(libqdns
+    src/core/byte_util.hpp
     src/core/dns.hpp
     src/core/header.hpp
     src/core/header.cpp

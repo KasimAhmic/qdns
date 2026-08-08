@@ -17,7 +17,7 @@ namespace q::dns {
     Update = 5,
   };
 
-  enum class RCode : uint8_t {
+  enum class ResponseCode : uint8_t {
     NoError        = 0,
     FormatError    = 1,
     ServerFailure  = 2,
@@ -35,7 +35,7 @@ namespace q::dns {
    * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
    * |                      ID                       |
    * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-   * |QR|   Opcode  |AA|TC|RD|RA|    Z   |   RCODE   |
+   * |QR|   Opcode  |AA|TC|RD|RA| Z|AD|CD|   RCODE   |
    * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
    * |                    QDCOUNT                    |
    * +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -55,30 +55,29 @@ namespace q::dns {
                     uint16_t an_count,
                     uint16_t ns_count,
                     uint16_t ar_count);
-    ~Header();
 
     static std::expected<Header, error::ParseError> parse(const std::span<const std::byte> data);
 
-    [[nodiscard]] uint16_t getId() const noexcept { return this->id; }
-    [[nodiscard]] uint16_t getFlags() const noexcept { return this->flags; }
-    [[nodiscard]] uint16_t getQdCount() const noexcept { return this->qd_count; }
-    [[nodiscard]] uint16_t getAnCount() const noexcept { return this->an_count; }
-    [[nodiscard]] uint16_t getNsCount() const noexcept { return this->ns_count; }
-    [[nodiscard]] uint16_t getArCount() const noexcept { return this->ar_count; }
+    [[nodiscard]] uint16_t get_id() const noexcept { return this->id; }
+    [[nodiscard]] uint16_t get_flags() const noexcept { return this->flags; }
+    [[nodiscard]] uint16_t get_question_count() const noexcept { return this->qd_count; }
+    [[nodiscard]] uint16_t get_answer_count() const noexcept { return this->an_count; }
+    [[nodiscard]] uint16_t get_authority_count() const noexcept { return this->ns_count; }
+    [[nodiscard]] uint16_t get_additional_records() const noexcept { return this->ar_count; }
 
-    [[nodiscard]] std::string toString() const;
+    [[nodiscard]] bool is_query() const noexcept;
+    [[nodiscard]] bool is_response() const noexcept;
+    [[nodiscard]] OpCode get_op_code() const noexcept;
+    [[nodiscard]] bool is_authoritative_answer() const noexcept;
+    [[nodiscard]] bool is_truncated() const noexcept;
+    [[nodiscard]] bool is_recursion_requested() const noexcept;
+    [[nodiscard]] bool is_recursion_available() const noexcept;
+    [[nodiscard]] bool is_reserved_set() const noexcept;
+    [[nodiscard]] bool is_authentic_data() const noexcept;
+    [[nodiscard]] bool is_checking_disabled() const noexcept;
+    [[nodiscard]] ResponseCode get_response_code() const noexcept;
 
-    // TODO: Replace these with getters
-    [[nodiscard]] bool qr() const noexcept;
-    [[nodiscard]] OpCode opCode() const noexcept;
-    [[nodiscard]] bool aa() const noexcept;
-    [[nodiscard]] bool tc() const noexcept;
-    [[nodiscard]] bool rd() const noexcept;
-    [[nodiscard]] bool ra() const noexcept;
-    [[nodiscard]] bool reservedZ() const noexcept;
-    [[nodiscard]] bool ad() const noexcept;
-    [[nodiscard]] bool cd() const noexcept;
-    [[nodiscard]] RCode rCode() const noexcept;
+    [[nodiscard]] std::string to_string() const;
 
   private:
     uint16_t id;
@@ -87,14 +86,5 @@ namespace q::dns {
     uint16_t an_count;
     uint16_t ns_count;
     uint16_t ar_count;
-
-    [[nodiscard]] static constexpr std::uint16_t read16(const std::span<const std::byte> data,
-                                                        const std::size_t offset) noexcept {
-
-      const auto high = std::to_integer<std::uint16_t>(data[offset]);
-      const auto low  = std::to_integer<std::uint16_t>(data[offset + 1]);
-
-      return static_cast<std::uint16_t>((high << 8U) | low);
-    }
   };
 } // namespace q::dns
