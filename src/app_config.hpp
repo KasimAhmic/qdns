@@ -2,10 +2,10 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <type_traits>
