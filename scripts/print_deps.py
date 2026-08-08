@@ -14,16 +14,19 @@ from pathlib import Path
 
 
 def git(*args: str, cwd: Path) -> str:
-    return (
-        subprocess.run(
-            ["git", *args],
-            cwd=cwd,
-            check=True,
-            capture_output=True,
+    try:
+        return (
+            subprocess.run(
+                ["git", *args],
+                cwd=cwd,
+                check=True,
+                capture_output=True,
+            )
+            .stdout.decode("utf-8")
+            .strip()
         )
-        .stdout.decode("utf-8")
-        .strip()
-    )
+    except:
+        return "N/A"
 
 
 def print_row(*args: tuple[str, int]) -> None:
