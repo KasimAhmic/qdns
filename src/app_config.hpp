@@ -1,11 +1,14 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 #include <boost/json/value_to.hpp>
 #include <spdlog/spdlog.h>
