@@ -3,8 +3,6 @@
 #include <format>
 
 namespace q::dns {
-  Header::Header() {}
-
   Header::Header(const uint16_t id,
                  const uint16_t flags,
                  const uint16_t qd_count,

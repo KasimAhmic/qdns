@@ -49,8 +49,6 @@ namespace q::dns {
    */
   class Header {
   public:
-    explicit Header();
-
     explicit Header(uint16_t id,
                     uint16_t flags,
                     uint16_t qd_count,
