@@ -77,6 +77,7 @@ if (BUILD_TESTING)
         test/test_app_config.cpp
         test/test_logging.cpp
         test/core/test_header.cpp
+        test/core/test_byte_util.cpp
     )
 
     target_link_libraries(qdns_tests
